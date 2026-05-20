@@ -27,7 +27,7 @@ export async function getById(req: AuthRequest, res: Response) {
 export async function create(req: AuthRequest, res: Response) {
   try {
     const ticket = await ticketService.create({ ...req.body, createdBy: req.user!.id });
-    await auditService.log(req.user!.id, "Ticket created", "Ticket", ticket._id.toString(), undefined, req.body, req.id);
+    await auditService.log(req.user!.id, `Ticket ${ticket.ticketNo} created`, "Ticket", ticket._id.toString(), undefined, req.body, req.id);
     res.status(201).json(success("Ticket created", ticket));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -38,7 +38,8 @@ export async function update(req: AuthRequest, res: Response) {
   try {
     const existingTicket = await ticketService.getById(req.params.id);
     const ticket = await ticketService.update(req.params.id, req.body);
-    await auditService.log(req.user!.id, "Ticket updated", "Ticket", ticket._id.toString(), existingTicket, req.body, req.id);
+    const changes = Object.keys(req.body).map((k) => `${k}: "${existingTicket[k]}" → "${req.body[k]}"`).join(", ");
+    await auditService.log(req.user!.id, `Ticket ${ticket.ticketNo} updated: ${changes}`, "Ticket", ticket._id.toString(), existingTicket, req.body, req.id);
     res.json(success("Ticket updated", ticket));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -48,7 +49,17 @@ export async function update(req: AuthRequest, res: Response) {
 export async function assign(req: AuthRequest, res: Response) {
   try {
     const { userId } = req.body;
+    const existingTicket = await ticketService.getById(req.params.id);
     const ticket = await ticketService.assign(req.params.id, userId);
+    await auditService.log(
+      req.user!.id,
+      `Ticket ${ticket.ticketNo} assigned from ${existingTicket.assignedTo ? "reassigned" : "unassigned"} to user ${userId}`,
+      "Ticket",
+      ticket._id.toString(),
+      { assignedTo: existingTicket.assignedTo },
+      { assignedTo: userId },
+      req.id
+    );
     res.json(success("Ticket assigned", ticket));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -62,7 +73,7 @@ export async function changeStatus(req: AuthRequest, res: Response) {
     const ticket = await ticketService.changeStatus(req.params.id, status);
     await auditService.log(
       req.user!.id,
-      `Ticket status changed from ${existingTicket.status} to ${ticket.status}`,
+      `Ticket ${ticket.ticketNo} status changed from ${existingTicket.status} to ${ticket.status}`,
       "Ticket",
       ticket._id.toString(),
       { status: existingTicket.status },
@@ -79,6 +90,15 @@ export async function addComment(req: AuthRequest, res: Response) {
   try {
     const { body } = req.body;
     const ticket = await ticketService.addComment(req.params.id, req.user!.id, body);
+    await auditService.log(
+      req.user!.id,
+      `Comment added to Ticket ${ticket.ticketNo}`,
+      "Ticket",
+      ticket._id.toString(),
+      undefined,
+      { comment: body },
+      req.id
+    );
     res.json(success("Comment added", ticket));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -90,7 +110,7 @@ export async function remove(req: AuthRequest, res: Response) {
     const { Ticket } = await import("./ticket.model");
     const ticket = await Ticket.findById(req.params.id);
     await Ticket.findByIdAndDelete(req.params.id);
-    await auditService.log(req.user!.id, "Ticket deleted", "Ticket", req.params.id, ticket?.toObject(), undefined, req.id);
+    await auditService.log(req.user!.id, `Ticket ${ticket?.ticketNo} deleted`, "Ticket", req.params.id, ticket?.toObject(), undefined, req.id);
     res.json(success("Ticket deleted"));
   } catch (err: any) {
     res.status(500).json(error(err.message, undefined, req.id));
@@ -103,7 +123,7 @@ export async function escalate(req: AuthRequest, res: Response) {
     const ticket = await ticketService.escalate(req.params.id, req.user!.id);
     await auditService.log(
       req.user!.id,
-      `Ticket escalated from ${existingTicket.priority} to ${ticket.priority}`,
+      `Ticket ${ticket.ticketNo} priority escalated from ${existingTicket.priority} to ${ticket.priority}`,
       "Ticket",
       ticket._id.toString(),
       { priority: existingTicket.priority },

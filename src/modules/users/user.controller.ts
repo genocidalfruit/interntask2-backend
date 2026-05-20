@@ -27,7 +27,7 @@ export async function getById(req: AuthRequest, res: Response) {
 export async function create(req: AuthRequest, res: Response) {
   try {
     const user = await userService.create(req.body);
-    await auditService.log(req.user!.id, "User created", "User", user._id.toString(), undefined, req.body, req.id);
+    await auditService.log(req.user!.id, `User "${user.name}" (${user.email}) created`, "User", user._id.toString(), undefined, req.body, req.id);
     res.status(201).json(success("User created", user));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -38,7 +38,8 @@ export async function update(req: AuthRequest, res: Response) {
   try {
     const existingUser = await userService.getById(req.params.id);
     const user = await userService.update(req.params.id, req.body);
-    await auditService.log(req.user!.id, "User updated", "User", user._id.toString(), existingUser, req.body, req.id);
+    const changes = Object.keys(req.body).map((k) => `${k}: "${existingUser[k]}" → "${req.body[k]}"`).join(", ");
+    await auditService.log(req.user!.id, `User "${user.name}" updated: ${changes}`, "User", user._id.toString(), existingUser, req.body, req.id);
     res.json(success("User updated", user));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -50,7 +51,7 @@ export async function remove(req: AuthRequest, res: Response) {
     const { User } = await import("./user.model");
     const user = await User.findById(req.params.id);
     await User.findByIdAndDelete(req.params.id);
-    await auditService.log(req.user!.id, "User deleted", "User", req.params.id, user?.toObject(), undefined, req.id);
+    await auditService.log(req.user!.id, `User "${user?.name}" (${user?.email}) deleted`, "User", req.params.id, user?.toObject(), undefined, req.id);
     res.json(success("User deleted"));
   } catch (err: any) {
     res.status(500).json(error(err.message, undefined, req.id));

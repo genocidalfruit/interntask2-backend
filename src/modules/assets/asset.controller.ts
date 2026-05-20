@@ -19,7 +19,7 @@ export async function getAll(req: AuthRequest, res: Response) {
 export async function create(req: AuthRequest, res: Response) {
   try {
     const asset = await assetService.create(req.body);
-    await auditService.log(req.user!.id, "Asset created", "Asset", asset._id.toString(), undefined, req.body, req.id);
+    await auditService.log(req.user!.id, `Asset "${asset.name}" (${asset.assetCode}) created`, "Asset", asset._id.toString(), undefined, req.body, req.id);
     res.status(201).json(success("Asset created", asset));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -38,7 +38,8 @@ export async function update(req: AuthRequest, res: Response) {
   try {
     const existingAsset = await assetService.getById(req.params.id);
     const asset = await assetService.update(req.params.id, req.body);
-    await auditService.log(req.user!.id, "Asset updated", "Asset", asset._id.toString(), existingAsset, req.body, req.id);
+    const changes = Object.keys(req.body).map((k) => `${k}: "${existingAsset[k]}" → "${req.body[k]}"`).join(", ");
+    await auditService.log(req.user!.id, `Asset "${asset.name}" updated: ${changes}`, "Asset", asset._id.toString(), existingAsset, req.body, req.id);
     res.json(success("Asset updated", asset));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -48,7 +49,17 @@ export async function update(req: AuthRequest, res: Response) {
 export async function assign(req: AuthRequest, res: Response) {
   try {
     const { userId } = req.body;
+    const existingAsset = await assetService.getById(req.params.id);
     const asset = await assetService.assign(req.params.id, userId);
+    await auditService.log(
+      req.user!.id,
+      `Asset "${asset.name}" assigned from ${existingAsset.assignedTo ? "reassigned" : "unassigned"} to user ${userId}`,
+      "Asset",
+      asset._id.toString(),
+      { assignedTo: existingAsset.assignedTo },
+      { assignedTo: userId },
+      req.id
+    );
     res.json(success("Asset assigned", asset));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -58,7 +69,17 @@ export async function assign(req: AuthRequest, res: Response) {
 export async function changeStatus(req: AuthRequest, res: Response) {
   try {
     const { status } = req.body;
+    const existingAsset = await assetService.getById(req.params.id);
     const asset = await assetService.changeStatus(req.params.id, status);
+    await auditService.log(
+      req.user!.id,
+      `Asset "${asset.name}" status changed from ${existingAsset.status} to ${asset.status}`,
+      "Asset",
+      asset._id.toString(),
+      { status: existingAsset.status },
+      { status: asset.status },
+      req.id
+    );
     res.json(success("Asset status changed", asset));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
@@ -78,7 +99,7 @@ export async function remove(req: AuthRequest, res: Response) {
   try {
     const asset = await Asset.findById(req.params.id);
     await Asset.findByIdAndDelete(req.params.id);
-    await auditService.log(req.user!.id, "Asset deleted", "Asset", req.params.id, asset?.toObject(), undefined, req.id);
+    await auditService.log(req.user!.id, `Asset "${asset?.name}" (${asset?.assetCode}) deleted`, "Asset", req.params.id, asset?.toObject(), undefined, req.id);
     res.json(success("Asset deleted"));
   } catch (err: any) {
     res.status(500).json(error(err.message, undefined, req.id));
