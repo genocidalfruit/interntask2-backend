@@ -1,0 +1,22 @@
+export declare const Permission: {
+    readonly ASSET_VIEW: "asset.view";
+    readonly ASSET_CREATE: "asset.create";
+    readonly ASSET_UPDATE: "asset.update";
+    readonly ASSET_ASSIGN: "asset.assign";
+    readonly ASSET_RETIRE: "asset.retire";
+    readonly TICKET_VIEW: "ticket.view";
+    readonly TICKET_CREATE: "ticket.create";
+    readonly TICKET_ASSIGN: "ticket.assign";
+    readonly TICKET_UPDATE: "ticket.update";
+    readonly TICKET_RESOLVE: "ticket.resolve";
+    readonly TICKET_CLOSE: "ticket.close";
+    readonly USER_VIEW: "user.view";
+    readonly USER_MANAGE: "user.manage";
+    readonly ROLE_MANAGE: "role.manage";
+    readonly DASHBOARD_VIEW: "dashboard.view";
+    readonly REPORT_VIEW: "report.view";
+    readonly AUDIT_VIEW: "audit.view";
+    readonly NOTIFICATION_VIEW: "notification.view";
+};
+export type Permission = (typeof Permission)[keyof typeof Permission];
+export declare const RolePermissions: Record<string, string[]>;

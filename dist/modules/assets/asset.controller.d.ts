@@ -1,0 +1,10 @@
+import { Response } from "express";
+import { AuthRequest } from "@/middleware/auth.middleware";
+export declare function getAll(req: AuthRequest, res: Response): Promise<void>;
+export declare function create(req: AuthRequest, res: Response): Promise<void>;
+export declare function getById(req: AuthRequest, res: Response): Promise<void>;
+export declare function update(req: AuthRequest, res: Response): Promise<void>;
+export declare function assign(req: AuthRequest, res: Response): Promise<void>;
+export declare function changeStatus(req: AuthRequest, res: Response): Promise<void>;
+export declare function getHistory(req: AuthRequest, res: Response): Promise<void>;
+export declare function remove(req: AuthRequest, res: Response): Promise<void>;
