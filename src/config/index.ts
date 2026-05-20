@@ -17,12 +17,15 @@ export const config = {
   cookie: {
     domain:
       process.env.NODE_ENV === "production"
-        ? process.env.COOKIE_DOMAIN || undefined
+        ? (process.env.COOKIE_DOMAIN || "").replace(/^https?:\/\//, "").replace(/\/$/, "") || undefined
         : undefined,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" as const : "lax" as const,
   },
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? (process.env.CORS_ORIGIN || "*")
+        : process.env.CORS_ORIGIN || "http://localhost:3000",
   },
 };
