@@ -58,7 +58,17 @@ export async function assign(req: AuthRequest, res: Response) {
 export async function changeStatus(req: AuthRequest, res: Response) {
   try {
     const { status } = req.body;
+    const existingTicket = await ticketService.getById(req.params.id);
     const ticket = await ticketService.changeStatus(req.params.id, status);
+    await auditService.log(
+      req.user!.id,
+      `Ticket status changed from ${existingTicket.status} to ${ticket.status}`,
+      "Ticket",
+      ticket._id.toString(),
+      { status: existingTicket.status },
+      { status: ticket.status },
+      req.id
+    );
     res.json(success("Ticket status changed", ticket));
   } catch (err: any) {
     res.status(400).json(error(err.message, undefined, req.id));
