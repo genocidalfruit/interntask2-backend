@@ -17,6 +17,12 @@ export interface ITicket extends Document {
   }[];
   attachmentUrls: string[];
   slaBreachNotified: boolean;
+  escalationHistory: {
+    escalatedBy: mongoose.Types.ObjectId;
+    fromPriority: Priority;
+    toPriority: Priority;
+    escalatedAt: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +46,14 @@ const TicketSchema = new Schema<ITicket>(
     ],
     attachmentUrls: [{ type: String }],
     slaBreachNotified: { type: Boolean, default: false },
+    escalationHistory: [
+      {
+        escalatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        fromPriority: { type: String, enum: Object.values(Priority), required: true },
+        toPriority: { type: String, enum: Object.values(Priority), required: true },
+        escalatedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

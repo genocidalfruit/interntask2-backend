@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAll, getById, create, update, assign, changeStatus, addComment, remove } from "./ticket.controller";
+import { getAll, getById, create, update, assign, changeStatus, addComment, remove, escalate } from "./ticket.controller";
 import { authMiddleware } from "@/middleware/auth.middleware";
 import { requirePermission } from "@/middleware/permission.middleware";
 import { scopeTickets } from "@/middleware/scope.middleware";
@@ -13,6 +13,7 @@ router.get("/:id", authMiddleware, requirePermission(Permission.TICKET_VIEW), ge
 router.patch("/:id", authMiddleware, requirePermission(Permission.TICKET_UPDATE), update);
 router.post("/:id/assign", authMiddleware, requirePermission(Permission.TICKET_ASSIGN), assign);
 router.post("/:id/status", authMiddleware, requirePermission(Permission.TICKET_UPDATE), changeStatus);
+router.post("/:id/escalate", authMiddleware, requirePermission(Permission.TICKET_ESCALATE), escalate);
 router.post("/:id/comments", authMiddleware, requirePermission(Permission.TICKET_UPDATE), addComment);
 router.delete("/:id", authMiddleware, requirePermission(Permission.TICKET_UPDATE), remove);
 

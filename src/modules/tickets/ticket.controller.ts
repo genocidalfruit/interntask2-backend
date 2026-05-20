@@ -86,3 +86,26 @@ export async function remove(req: AuthRequest, res: Response) {
     res.status(500).json(error(err.message, undefined, req.id));
   }
 }
+
+export async function escalate(req: AuthRequest, res: Response) {
+  try {
+    const existingTicket = await ticketService.getById(req.params.id);
+    const ticket = await ticketService.escalate(req.params.id, req.user!.id);
+    await auditService.log(
+      req.user!.id,
+      `Ticket escalated from ${existingTicket.priority} to ${ticket.priority}`,
+      "Ticket",
+      ticket._id.toString(),
+      { priority: existingTicket.priority },
+      { priority: ticket.priority },
+      req.id
+    );
+    res.json(success("Ticket escalated", ticket));
+  } catch (err: any) {
+    if (err.message.includes("maximum priority")) {
+      res.status(400).json(error(err.message, undefined, req.id));
+    } else {
+      res.status(400).json(error(err.message, undefined, req.id));
+    }
+  }
+}

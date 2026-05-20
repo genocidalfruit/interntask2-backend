@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Ticket, ITicket } from "./ticket.model";
 import { TicketStatus, Priority } from "@/shared/enums";
 import { parsePagination, getMeta, getSortObject } from "@/shared/utils/pagination";
@@ -115,5 +116,30 @@ export class TicketService {
 
   async markSlaBreached(id: string) {
     await Ticket.findByIdAndUpdate(id, { slaBreachNotified: true });
+  }
+
+  async escalate(id: string, userId: string) {
+    const ticket = await Ticket.findById(id);
+    if (!ticket) throw new Error("Ticket not found");
+    if (ticket.priority === Priority.CRITICAL) {
+      throw new Error("Ticket is already at maximum priority (CRITICAL)");
+    }
+
+    const priorityOrder = [Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.CRITICAL];
+    const currentIndex = priorityOrder.indexOf(ticket.priority);
+    const newPriority = priorityOrder[currentIndex + 1];
+
+    const oldPriority = ticket.priority;
+    ticket.priority = newPriority;
+    ticket.slaDeadline = calculateSlaDeadline(newPriority);
+    ticket.escalationHistory.push({
+      escalatedBy: new mongoose.Types.ObjectId(userId),
+      fromPriority: oldPriority,
+      toPriority: newPriority,
+      escalatedAt: new Date(),
+    });
+
+    await ticket.save();
+    return ticket;
   }
 }
